@@ -4,6 +4,8 @@ library(tidyverse)
 library(sf)
 library(janitor)
 library(leaflet)
+library(plotly)
+
 
 Sys.setlocale("LC_ALL", "pt_BR.UTF-8")
 
