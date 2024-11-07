@@ -1,5 +1,6 @@
 source('MapaEmShiny.R')
 
+# FRONT END
 ui <- fluidPage(
   titlePanel("Isolamento social em São Paulo - 2022"),
   
@@ -28,16 +29,19 @@ ui <- fluidPage(
   )
 )
 
+# BACK END
 server <- function(input, output, session) {
   
-  # Reactive data filtered by the selected date
+  #Filtra a data
   filtered_data <- reactive({
     mapa_data %>%
       filter(!is.na(data) & data == as.Date(input$date))
   })
   
-  # Render Leaflet map
+  # mapa filtrado pela data
   output$map <- renderLeaflet({
+    
+    # centroide no mapa pra centralizar a incialização
     poly <- filtered_data()$geometry[1]
     centroid <- st_centroid(poly)
     centroid_coords <- st_coordinates(centroid)
@@ -47,7 +51,6 @@ server <- function(input, output, session) {
       setView(lng = centroid_coords[1], lat = centroid_coords[2], zoom = 8)
   })
   
-  # Update map based on date selection
   observe({
     leafletProxy("map") %>%
       clearShapes() %>%
@@ -71,7 +74,7 @@ server <- function(input, output, session) {
                         "População: ", populacao_estimada_2020, "<br>",
                         "Data: ", data, "<br>",
                         "Índice de isolamento social: ", media_de_indice_de_isolamento),
-        layerId = ~municipio1  # Assign each city name as the layer ID
+        layerId = ~municipio1 
       ) %>%
       addLegend("topright",
                 pal = pal,
@@ -83,14 +86,14 @@ server <- function(input, output, session) {
   clicked_city <- reactiveVal(NULL)
   
   observeEvent(input$map_shape_click, {
-    clicked_city(input$map_shape_click$id)  # Set clicked city based on layerId
+    clicked_city(input$map_shape_click$id) 
   })
   
-  # Render a plot based on the clicked city, ignoring the date
+  
   output$city_plot <- renderPlotly({
     city <- clicked_city()
     
-    # Ensure a city has been selected
+    
     if (is.null(city)) return(NULL)
     
     # Filter data for the selected city across all dates
@@ -99,12 +102,18 @@ server <- function(input, output, session) {
     # Ensure city data is valid before plotting
     if (nrow(city_data) == 0) return(NULL)
     
+    selected_date_data <- filtered_data() %>% 
+      filter(municipio1 == city) %>% 
+      slice(1) 
+    
     # Create a plot of isolation index over time for the selected city
     p <- ggplot(city_data, aes(x = as.Date(data), y = media_de_indice_de_isolamento)) +
       geom_line(color = "#FEB24C") +
       geom_point(aes(text = paste("Data:", as.Date(data),
                                   "<br>Índice de Isolamento:", media_de_indice_de_isolamento)),
                  color = "#FEB24C") +
+      geom_point(data = selected_date_data, aes(x = as.Date(data), y = media_de_indice_de_isolamento), 
+                 color = "red", size = 2) +
       labs(
         title = paste("Índice de Isolamento Social em", city),
         x = "Data",
