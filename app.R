@@ -2,11 +2,11 @@ source('MapaEmShiny.R')
 
 # FRONT END
 ui <- fluidPage(
-  titlePanel("Isolamento social em São Paulo - 2022"),
+  titlePanel("Isolamento social em São Paulo - 2020 e 2021"),
   
   sidebarLayout(
     sidebarPanel(
-      dateInput("date", "Selecionar Data", value = min(dados$data), min = min(dados$data), max = max(dados$data)),
+      dateInput("date", "Selecionar Data", value = min(dados$data1), min = min(dados$data1), max = max(dados$data1)),
       br(),
       wellPanel(
         style = "background-color: #f7f7f7; padding: 15px; border-radius: 5px;",
@@ -35,7 +35,7 @@ server <- function(input, output, session) {
   #Filtra a data
   filtered_data <- reactive({
     mapa_data %>%
-      filter(!is.na(data) & data == as.Date(input$date))
+      filter(!is.na(data1) & data1 == as.Date(input$date))
   })
   
   # mapa filtrado pela data
@@ -72,7 +72,7 @@ server <- function(input, output, session) {
         fillOpacity = 0.7,
         popup = ~paste0("Município: ", municipio1, "<br>",
                         "População: ", populacao_estimada_2020, "<br>",
-                        "Data: ", data, "<br>",
+                        "Data: ", data1, "<br>",
                         "Índice de isolamento social: ", media_de_indice_de_isolamento),
         layerId = ~municipio1 
       ) %>%
@@ -107,12 +107,12 @@ server <- function(input, output, session) {
       slice(1) 
     
     # Create a plot of isolation index over time for the selected city
-    p <- ggplot(city_data, aes(x = as.Date(data), y = media_de_indice_de_isolamento)) +
+    p <- ggplot(city_data, aes(x = as.Date(data1), y = media_de_indice_de_isolamento)) +
       geom_line(color = "#FEB24C") +
-      geom_point(aes(text = paste("Data:", as.Date(data),
+      geom_point(aes(text = paste("Data:", as.Date(data1),
                                   "<br>Índice de Isolamento:", media_de_indice_de_isolamento)),
                  color = "#FEB24C") +
-      geom_point(data = selected_date_data, aes(x = as.Date(data), y = media_de_indice_de_isolamento), 
+      geom_point(data = selected_date_data, aes(x = as.Date(data1), y = media_de_indice_de_isolamento), 
                  color = "red", size = 2) +
       labs(
         title = paste("Índice de Isolamento Social em", city),

@@ -5,6 +5,8 @@ library(sf)
 library(janitor)
 library(leaflet)
 library(plotly)
+library(lubridate)
+
 
 
 Sys.setlocale("LC_ALL", "pt_BR.UTF-8")
@@ -12,12 +14,41 @@ Sys.setlocale("LC_ALL", "pt_BR.UTF-8")
 
 #muda p teu repo
 dados = read.csv2("isolamento.csv", fileEncoding="UTF-8")
+#dados1 = read.csv2("isolamento.csv", fileEncoding="UTF-8")
 dados$codigo_municipio_ibge  = as.character(dados$codigo_municipio_ibge )
 dados_na <- dados %>% group_by(municipio1 , codigo_municipio_ibge ) %>%
   summarise() 
+
+### AJUSTAR A DATA COM AJUDA DO GPT PRKDOASFDJMNPDAAJ
 dados <- dados %>%
-  mutate(data = as.Date(paste0(str_extract(data , "\\d+/\\d+"), "/2022"), format = "%d/%m/%Y"))
-dados <- dados %>% filter(!is.na(data ))
+  mutate(data = as.Date(paste0(str_extract(data, "\\d+/\\d+"), "/2021"), format = "%d/%m/%Y")) %>%
+  mutate(
+    day_month = format(data, "%d/%m"),
+    year = format(data, "%Y")
+  )
+
+dados <- dados %>%
+  group_by(municipio1) %>%
+  mutate(
+    # Create a new column to track the year for each city
+    adjusted_year = 2021 - cumsum(format(data, "%d/%m") == "31/12" & row_number() > 1)
+  ) %>%
+  ungroup()
+
+dados <- dados %>%
+  group_by(municipio1) %>%
+  mutate(
+    # Create a new column `data1` with adjusted year
+    data1 = paste0(format(data, "%d/%m/"), adjusted_year) 
+  ) %>%
+  ungroup()
+
+dados$data1 <- as.Date(dados$data1, format = "%d/%m/%Y")
+dados <- dados[!(month(dados$data1) == 2 & year(dados$data1) == 2020), ]
+
+
+
+dados <- dados %>% filter(!is.na(data1 ))
 
 
 estado = 'SP'
